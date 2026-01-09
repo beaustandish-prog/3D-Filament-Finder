@@ -4,12 +4,9 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-import uvicorn
-import socket
 import os
 import shutil
 import uuid
-import qrcode
 import io
 import base64
 
@@ -79,14 +76,6 @@ def logout(response: Response):
     return RedirectResponse(url="/login")
 
 
-def get_local_ip_url(port=8000, scheme="https"):
-    hostname = socket.gethostname()
-    try:
-        local_ip = socket.gethostbyname(hostname)
-    except:
-        local_ip = "127.0.0.1"
-    return f"{scheme}://{local_ip}:{port}"
-
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request, db: Session = Depends(get_db)):
     user = get_current_user_from_cookie(request, db)
@@ -101,24 +90,9 @@ def read_root(request: Request, db: Session = Depends(get_db)):
     materials = sorted(list(set([i.material for i in inventory if i.material])))
     colors = sorted(list(set([i.color_name for i in inventory if i.color_name])))
     
-    # Generate QR Code for Mobile (Use local IP so phones can connect)
-    network_url = get_local_ip_url()
-    
-    qr = qrcode.QRCode(box_size=10, border=4)
-    qr.add_data(network_url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    # Convert QR to base64 for template
-    buffered = io.BytesIO()
-    img.save(buffered, format="PNG")
-    qr_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    
     return templates.TemplateResponse("dashboard.html", {
         "request": request, 
         "inventory": inventory, 
-        "qr_code": qr_b64,
-        "network_url": network_url,
         "brands": brands,
         "materials": materials,
         "colors": colors,
