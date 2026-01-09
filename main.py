@@ -298,7 +298,12 @@ def scan_page(request: Request, db: Session = Depends(get_db)):
 async def process_scan(image: UploadFile = File(...)):
     # Save image temporarily
     file_id = str(uuid.uuid4())
-    file_location = f"static/scan_{file_id}.jpg"
+    # Use /tmp for production (Vercel/Docker) which is usually writable
+    temp_dir = "/tmp" if os.getenv("DATABASE_URL") else "static"
+    if not os.path.exists(temp_dir):
+        os.makedirs(temp_dir)
+        
+    file_location = os.path.join(temp_dir, f"scan_{file_id}.jpg")
     with open(file_location, "wb+") as file_object:
         shutil.copyfileobj(image.file, file_object)
     
