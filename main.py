@@ -22,6 +22,10 @@ app = FastAPI(title="Filament Finder")
 
 
 # Mount static files
+# Ensure static directory exists
+if not os.path.exists("static"):
+    os.makedirs("static")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
