@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Spool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen p-6">
+
+    <div class="max-w-xl mx-auto bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
+        <div class="p-6 bg-gray-700 border-b border-gray-600 flex justify-between items-center">
+            <h2 class="text-xl font-bold">Add New Spool</h2>
+            <a href="/" class="text-gray-400 hover:text-white">Cancel</a>
+        </div>
+
+        <div class="p-6">
+            <!-- Image Preview -->
+            <div id="image-preview" class="mb-6 hidden">
+                <p class="text-sm text-gray-400 mb-2">Captured Label:</p>
+                <img id="scanned-img" src="" class="w-full h-48 object-cover rounded-lg border-2 border-blue-500">
+            </div>
+
+            <form id="add-form" class="space-y-4">
+                <input type="hidden" name="image_path" id="image_path">
+
+                <!-- Grid 1: Brand, Material & Code -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-400">Filament Code / SKU
+                            (Auto-detected)</label>
+                        <input type="text" name="filament_code" id="filament_code" placeholder="e.g. 13612"
+                            class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-yellow-400 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400">Brand</label>
+                        <input type="text" name="brand" id="brand"
+                            class="mt-1 w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400">Material</label>
+                        <select name="material" id="material"
+                            class="mt-1 w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+                            <option value="PLA">PLA</option>
+                            <option value="PETG">PETG</option>
+                            <option value="ABS">ABS</option>
+                            <option value="TPU">TPU</option>
+                            <option value="ASA">ASA</option>
+                            <option value="Nylon">Nylon</option>
+                            <option value="PC">PC</option>
+                            <option value="CF">CF-Blend</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Color Section -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-400">Color Name</label>
+                        <input type="text" name="color_name" id="color_name" placeholder="e.g. Galaxy Black"
+                            class="mt-1 w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400">Hex</label>
+                        <div class="flex items-center mt-1">
+                            <input type="color" name="color_hex" id="color_hex" value="#ffffff"
+                                class="h-10 w-10 p-0 border-0 rounded overflow-hidden cursor-pointer">
+                            <span id="hex-val" class="ml-2 text-xs text-mono text-gray-500">#FFF</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Specs -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400">Total Weight (g)</label>
+                        <input type="number" name="weight_initial_g" id="weight_initial_g" value="1000"
+                            class="mt-1 w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400">Remaining (g)</label>
+                        <input type="number" name="weight_remaining_g" id="weight_remaining_g" value="1000"
+                            class="mt-1 w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400">Temp Range (°C)</label>
+                        <input type="text" name="temp_nozzle" id="temp_nozzle" placeholder="200-220"
+                            class="mt-1 w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400">Diameter (mm)</label>
+                        <input type="number" step="0.01" name="diameter" id="diameter" value="1.75"
+                            class="mt-1 w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400">Location</label>
+                        <input type="text" name="location" id="location" placeholder="e.g. AMS Slot 1"
+                            class="mt-1 w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400">Quantity</label>
+                        <input type="number" name="quantity" id="quantity" value="1" min="1"
+                            class="mt-1 w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg shadow-lg mt-4">
+                    Save Spool
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Populate from URL
+        const params = new URLSearchParams(window.location.search);
+
+        function updateVal(id, param) {
+            if (params.has(param) && params.get(param) !== 'null' && params.get(param) !== '') {
+                document.getElementById(id).value = params.get(param);
+            }
+        }
+
+        updateVal('filament_code', 'code');
+        updateVal('brand', 'brand');
+        updateVal('material', 'material');
+        updateVal('color_name', 'color');
+        updateVal('weight_initial_g', 'weight');
+        updateVal('weight_remaining_g', 'weight');
+        updateVal('temp_nozzle', 'temp');
+        updateVal('diameter', 'diameter');
+        updateVal('diameter', 'diameter');
+        updateVal('image_path', 'img');
+
+        // Populate Hex and trigger event
+        if (params.has('hex') && params.get('hex')) {
+            const hex = params.get('hex');
+            document.getElementById('color_hex').value = hex;
+            document.getElementById('hex-val').textContent = hex.toUpperCase();
+        }
+
+        // Handle Image Preview
+        const imgPath = params.get('img');
+        if (imgPath) {
+            document.getElementById('image-preview').classList.remove('hidden');
+            document.getElementById('scanned-img').src = '/' + imgPath;
+        }
+
+        // Color Picker Sync
+        const picker = document.getElementById('color_hex');
+        const hexLabel = document.getElementById('hex-val');
+        picker.addEventListener('input', (e) => hexLabel.textContent = e.target.value.toUpperCase());
+
+        // Custom Submit using Fetch
+        document.getElementById('add-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            // Build URL encoded body
+            const qs = new URLSearchParams(formData).toString();
+
+            try {
+                const res = await fetch('/api/inventory?' + qs, { method: 'POST' });
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    const errText = await res.text();
+                    alert('Error saving spool: ' + errText);
+                    console.error('Server Error:', errText);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    </script>
+</body>
+
+</html>

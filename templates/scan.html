@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filament Finder - Scan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gray-800 p-4 shadow-lg flex justify-between items-center">
+        <h1 class="text-xl font-bold text-blue-400">Filament Finder</h1>
+        <a href="/" class="text-sm text-gray-300 hover:text-white">Back</a>
+    </header>
+
+    <!-- Camera Viewport -->
+    <main class="flex-grow flex flex-col items-center justify-center p-4 relative">
+        <div
+            class="relative w-full max-w-md aspect-[3/4] bg-black rounded-lg overflow-hidden shadow-2xl border-2 border-gray-700">
+            <video id="camera-stream" autoplay playsinline class="w-full h-full object-cover"></video>
+            <canvas id="camera-canvas" class="hidden"></canvas>
+
+            <!-- Overlay Guide -->
+            <div
+                class="absolute inset-0 border-2 border-blue-500/50 m-8 rounded-lg pointer-events-none flex items-center justify-center">
+                <p class="text-blue-500/50 text-sm font-bold bg-black/50 px-2 rounded">Align Label Here</p>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="mt-6 flex space-x-4">
+            <button id="capture-btn"
+                class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-full shadow-lg transform transition active:scale-95 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Scan Label
+            </button>
+        </div>
+
+        <!-- Status Message -->
+        <div id="status-msg" class="mt-4 text-center text-sm text-gray-400 hidden"></div>
+    </main>
+
+    <script>
+        const video = document.getElementById('camera-stream');
+        const canvas = document.getElementById('camera-canvas');
+        const captureBtn = document.getElementById('capture-btn');
+        const statusMsg = document.getElementById('status-msg');
+
+        // Start Camera
+        async function startCamera() {
+            const constraints = {
+                video: {
+                    facingMode: "environment",
+                    width: { ideal: 4096 }, // Try 4K
+                    height: { ideal: 2160 },
+                    focusMode: { ideal: "continuous" }
+                }
+            };
+
+            try {
+                // Try high quality first
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+
+                // Track capabilities if supported
+                const track = stream.getVideoTracks()[0];
+                const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+                console.log("Camera Capabilities:", capabilities);
+
+                // If focusMode is supported but didn't apply, try setting it
+                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                    await track.applyConstraints({
+                        advanced: [{ focusMode: "continuous" }]
+                    });
+                }
+            } catch (err) {
+                console.warn("High-res camera access failed, trying fallback:", err);
+                try {
+                    // Fallback to standard HD
+                    const fallbackStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: "environment" }
+                    });
+                    video.srcObject = fallbackStream;
+                } catch (fallbackErr) {
+                    console.error("Error accessing camera:", fallbackErr);
+                    statusMsg.textContent = "Error accessing camera. Please ensure you are using HTTPS and have granted camera permissions.";
+                    statusMsg.classList.remove('hidden');
+                    statusMsg.classList.add('text-red-500');
+                }
+            }
+        }
+
+        // Initialize
+        startCamera();
+
+        // Capture Logic
+        captureBtn.addEventListener('click', () => {
+            // Visualize click
+            captureBtn.classList.add('opacity-50');
+            statusMsg.textContent = "Processing...";
+            statusMsg.classList.remove('hidden', 'text-red-500');
+            statusMsg.classList.add('text-yellow-400');
+
+            // Draw to canvas
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert to Blob
+            canvas.toBlob(blob => {
+                uploadImage(blob);
+            }, 'image/jpeg', 0.95);
+        });
+
+        async function uploadImage(blob) {
+            const formData = new FormData();
+            formData.append('image', blob, 'scan.jpg');
+
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Show Review Modal
+                    statusMsg.classList.add('hidden');
+                    captureBtn.classList.add('hidden');
+
+                    const modal = document.createElement('div');
+                    modal.className = "fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4";
+
+                    const ocr = data.ocr_data || {};
+                    const hasCode = !!ocr.filament_code;
+                    const codeColor = hasCode ? 'text-green-400' : 'text-red-400';
+
+                    modal.innerHTML = `
+                        <div class="bg-gray-800 p-6 rounded-xl max-w-sm w-full space-y-4 border border-gray-600">
+                            <h3 class="text-xl font-bold">Scan Results</h3>
+                            
+                            <div class="space-y-2 text-sm">
+                                <p><span class="text-gray-400">Code:</span> <span class="${codeColor} font-mono text-lg">${ocr.filament_code || 'Not Found'}</span></p>
+                                <p><span class="text-gray-400">Brand:</span> ${ocr.brand || '?'}</p>
+                                <p><span class="text-gray-400">Material:</span> ${ocr.material || '?'}</p>
+                                <p><span class="text-gray-400">Color:</span> ${ocr.color_name || '?'}</p>
+                            </div>
+
+                            <details class="text-xs text-gray-500">
+                                <summary>View Raw Text</summary>
+                                <pre class="mt-2 p-2 bg-black rounded overflow-x-auto">${data.debug_text || ''}</pre>
+                            </details>
+
+                            <div class="flex space-x-3 pt-2">
+                                <button id="retry-btn" class="flex-1 bg-gray-600 py-2 rounded">Retry</button>
+                                <button id="confirm-btn" class="flex-1 bg-blue-600 py-2 rounded font-bold">Use Data</button>
+                            </div>
+                        </div>
+                    `;
+
+                    document.body.appendChild(modal);
+
+                    document.getElementById('retry-btn').onclick = () => window.location.reload();
+
+                    document.getElementById('confirm-btn').onclick = () => {
+                        const params = new URLSearchParams({
+                            brand: ocr.brand || '',
+                            material: ocr.material || '',
+                            weight: ocr.weight_g || '',
+                            temp: ocr.temp_nozzle || '',
+                            diameter: ocr.diameter || '1.75',
+                            color: ocr.color_name || '',
+                            hex: ocr.color_hex || '', // Pass HEX
+                            code: ocr.filament_code || '',
+                            img: data.file_path || ''
+                        });
+                        window.location.href = `/add?${params.toString()}`;
+                    };
+
+                } else {
+                    throw new Error("Server error");
+                }
+            } catch (err) {
+                console.error(err);
+                statusMsg.textContent = "Upload failed.";
+                statusMsg.classList.replace('text-yellow-400', 'text-red-500');
+                captureBtn.classList.remove('opacity-50');
+            }
+        }
+    </script>
+</body>
+
+</html>

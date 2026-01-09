@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Filament Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-700">
+
+        <!-- Header -->
+        <div class="bg-gray-900 p-6 text-center border-b border-gray-700">
+            <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
+                Filament Finder
+            </h1>
+            <p class="text-gray-400 mt-2 text-sm">Manage Your 3D Filament Inventory</p>
+        </div>
+
+        <!-- Form -->
+        <div class="p-8">
+            <div id="error-msg" class="hidden bg-red-500/20 text-red-400 p-3 rounded mb-4 text-sm text-center"></div>
+
+            <form id="auth-form" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
+                    <input type="email" name="username" required
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                    <div class="relative">
+                        <input type="password" name="password" id="password" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition pr-10">
+                        <button type="button" onclick="togglePassword()"
+                            class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-white">
+                            <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.243M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" id="remember_me" name="remember_me"
+                        class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500">
+                    <label for="remember_me" class="ml-2 text-sm text-gray-300">Remember me</label>
+                </div>
+
+                <div class="flex flex-col gap-3 pt-2">
+                    <button type="submit" formaction="/login" id="login-btn"
+                        class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition transform active:scale-95 shadow-lg">
+                        Log In
+                    </button>
+
+                    <button type="button" id="register-btn"
+                        class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-3 rounded-lg transition border border-gray-600">
+                        Create New Account
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('auth-form');
+        const loginBtn = document.getElementById('login-btn');
+        const registerBtn = document.getElementById('register-btn');
+        const errorMsg = document.getElementById('error-msg');
+
+        // Handle Login
+        loginBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!validateForm()) return;
+
+            // Use URLSearchParams for x-www-form-urlencoded (standard for OAuth2 token endpoints)
+            const formData = new URLSearchParams();
+            formData.append('username', form.username.value);
+            formData.append('password', form.password.value);
+            if (form.remember_me.checked) {
+                formData.append('remember_me', 'true');
+            }
+
+            try {
+                const res = await fetch('/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    const data = await res.json();
+                    showError(data.detail);
+                }
+            } catch (err) {
+                console.error(err);
+                showError("Connection error during login");
+            }
+        });
+
+        // Handle Register
+        registerBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!validateForm()) return;
+
+            // Use URLSearchParams for x-www-form-urlencoded
+            const formData = new URLSearchParams();
+            formData.append('username', form.username.value);
+            formData.append('password', form.password.value);
+
+            try {
+                const res = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+
+                if (res.ok) {
+                    // Registration successful - auto login
+                    const loginData = new URLSearchParams();
+                    loginData.append('username', form.username.value);
+                    loginData.append('password', form.password.value);
+
+                    const loginRes = await fetch('/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: loginData
+                    });
+
+                    if (loginRes.ok) {
+                        window.location.href = '/';
+                    } else {
+                        window.location.reload(); // Fallback to reload so they can login manually
+                    }
+
+                } else {
+                    const data = await res.json();
+                    showError(data.detail);
+                }
+            } catch (err) {
+                console.error(err);
+                showError("Connection error during registration");
+            }
+        });
+
+        function validateForm() {
+            if (!form.username.value || !form.password.value) {
+                showError("Please fill in both email and password");
+                return false;
+            }
+            return true;
+        }
+
+        function showError(msg) {
+            errorMsg.classList.remove('hidden');
+
+            if (typeof msg === 'object') {
+                // Handle list of validation errors (e.g. from FastAPI)
+                if (Array.isArray(msg)) {
+                    errorMsg.innerHTML = msg.map(e => `• ${e.msg || JSON.stringify(e)}`).join('<br>');
+                } else {
+                    errorMsg.textContent = JSON.stringify(msg);
+                }
+            } else {
+                errorMsg.textContent = msg || "An error occurred";
+            }
+        }
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            const eyeOffIcon = document.getElementById('eye-off-icon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.add('hidden');
+                eyeOffIcon.classList.remove('hidden');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('hidden');
+                eyeOffIcon.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+
+</html>

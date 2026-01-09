@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Database
+*.db
+
+# Certificates
+*.pem
+
+# Local Scans (Optional - you might want to start fresh in production)
+static/scan_*.jpg
+
+# Vercel
+.vercel

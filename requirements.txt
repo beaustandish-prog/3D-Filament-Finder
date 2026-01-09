@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+jinja2
+sqlalchemy
+python-multipart
+requests
+Pillow
+pytesseract
+pyzbar
+googlesearch-python
+beautifulsoup4
+fake-useragent
+passlib[bcrypt]
+bcrypt==4.0.1
+psycopg2-binary
+python-dotenv
